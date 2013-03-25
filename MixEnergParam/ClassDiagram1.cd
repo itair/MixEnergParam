@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="TriAngle">
+    <Position X="6" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAACgAQAABAAAAAA=</HashCode>
+      <FileName>TriMesh.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Vetex">
+    <Position X="2.5" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAABgAQAAAAA=</HashCode>
+      <FileName>TriMesh.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PlanePara">
+    <Position X="4.25" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABIAAAAAAAA=</HashCode>
+      <FileName>TriMesh.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TriMesh">
+    <Position X="0.75" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAACAhABAAAAAAggAAEAIIgAERAAgABAAAAAAAAAAY=</HashCode>
+      <FileName>TriMesh.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
