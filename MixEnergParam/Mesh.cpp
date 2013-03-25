@@ -2,7 +2,6 @@
 
 #include "StdAfx.h"
 #include "Mesh.h"
-//#include <fstream>
 using namespace std;
 
 Mesh::Mesh(){
@@ -11,8 +10,7 @@ Mesh::Mesh(){
 	m_Mesh_edges.clear();
 	m_Mesh_vetexs.clear();
 	m_Edge_Border.clear();
-	m_Edge_T1.clear();
-	
+	m_Edge_T1.clear();	
 }
 
 Mesh::~Mesh(){
@@ -239,21 +237,10 @@ sVector Mesh::NormalCross( sVector &v1, sVector&v2 ){
 	//规范化叉积
 	sVector norm;
 	double more; 	
-// 		ab = v1;
-// 		bc = v2;
-// 		norm.x = (ab.y * bc.z) - (ab.z * bc.y);
-// 		norm.y = -((ab.x * bc.z) - (ab.z * bc.x));
-// 		norm.z = (ab.x * bc.y) - (ab.y * bc.x);
-// 		more=sqrt(norm.x *norm.x + norm.y*norm.y + norm.z*norm.z);
-// 		norm.x=norm.x/more;
-// 		norm.y=norm.y/more;
-// 		norm.z=norm.z/more;
-		norm = Cross( v1 , v2 );
-		more = More( norm );
-		norm =norm / more;
-		return  norm;
-	
-
+	norm = Cross( v1 , v2 );
+	more = More( norm );
+	norm =norm / more;
+	return  norm;	
 }
 
 sVector Mesh::Cross(sVector &v1,sVector &v2){
@@ -278,9 +265,6 @@ void Mesh::ProcessFace(){
 		c = m_Mesh_vetexs.at(iter->v3).pos;
  		ab = a - b;
  		bc = b - c;
-// 		norm.x = (ab.y * bc.z) - (ab.z * bc.y);
-// 		norm.y = -((ab.x * bc.z) - (ab.z * bc.x));
-// 		norm.z = (ab.x * bc.y) - (ab.y * bc.x);
 		norm=NormalCross(ab,bc);
 		iter->normal = norm;
 		++iter;
@@ -370,15 +354,6 @@ bool Mesh::RunFlatPara(){
 }
 void Mesh::GetFirstTri(){
 	//放置第一个三角形
-// 	Index nextTri=m_Mesh_faces.size()/2;
-// 	m_CurrentTri=m_Mesh_faces[nextTri];
-// 	m_Mesh_T0.push_back(m_CurrentTri);
-// 	m_Mesh_T1.push_back(m_CurrentTri);
-// 	vector<Face>::iterator iter;
-// 	remove(m_Face_T2.begin(), m_Face_T2.end(), m_CurrentTri);
-// 	iter=m_Face_T2.end();
-// 	iter--;
-// 	m_Face_T2.pop_back();
 	Index firstface=m_Mesh_faces.size()/2;
 	m_Face_T0.push_back(firstface);
 	m_Face_T1.push_back(firstface);
@@ -428,20 +403,6 @@ void Mesh::Flatten1stTir(){
 }
 
 bool Mesh::GetNextVetex(){
-// 	//int nextTri;
-// 	Index index_face,index_vertex;
-// 	GetNextTri();//查找出 t0
-// 		while (m_Face_T0.empty()!=true)	{
-// 		index_face=m_Face_T0.back();
-// 		m_Face_T0.pop_back();
-// 		m_Face_T0.push_back(index_face);
-// 	//	for (vector<Mesh>::iterator iter=m_Mesh_T2.begin();iter!=m_Mesh_T2.end(); iter++){
-// 		//	if (m_CurrentTri.isEqual(*iter)) { m_Mesh_T2.erase(iter);break;}
-// 	//	}
-// 	}
-// 	m_Edge_Border.clear();
-// 	GetT1Boundary();//更新T1边缘;存于m_Edge_Border
-
 	//T0中所有边中 邻面未mark的边 对应的顶点集 m_Vertex_Border;
 	//m_Vertex_Borderi中全部邻面未mark的 为新T0;
 	//新T0中 不在m_Vertex_Border中的顶点为自由顶点;
@@ -489,9 +450,10 @@ bool Mesh::GetNextVetex(){
 		//去除 老边界点, 一个三角形只统计一次,不会重复添加(*iter) 进 Free,删一次就够了
 		m_Vertex_Free.remove((*iter));
 	}//for
-	if (m_Face_T0.empty()==true) return false; //下一层找不到了
-	else return true;
-}
+// 	if (m_Face_T0.empty()==true) return false; //下一层找不到了
+// 	else return true;
+	return !m_Face_T0.empty();
+ }
 
 
 
