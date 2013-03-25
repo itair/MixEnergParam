@@ -455,63 +455,6 @@ bool Mesh::GetNextVetex(){
 	return !m_Face_T0.empty();
  }
 
-
-
-void Mesh::GetNextTri(){
-	//找到与已处理的网格片的边界相邻的三角形..一次性找全找出来..
-	//以顶点的邻接三角形?还是以边的邻接三角形?(以边的邻接三角形)存入 m_Mesh_T0 
-// 	m_Face_T0.clear();
-// 	for (vector<Edge>::iterator iter1=m_Edge_Border.begin(); iter1 !=m_Edge_Border.end();iter1++)	{
-// 		for (vector<Edge>::iterator iter2=m_Mesh_edges.begin(); iter2 !=m_Mesh_edges.end();iter2++)		{
-// 			if (iter1->v1==iter2->v2 && iter1->v2==iter2->v1){
-// 				m_CurrentTri=m_Mesh_faces.at(iter2->adjFace.back());
-// 				m_Mesh_T0.push_back(m_CurrentTri);
-// 			}
-// 		}
-// 	}
-// 
-
-}
-
-void Mesh::GetT1Boundary(){  
-// 	for (vector<Mesh>::size_type i=0; i< m_Mesh_T1.size(); i++)	{
-// 		//int e=(int)m_Mesh_T1.at(i).v1;
-// 		m_CurrentEdge=m_Mesh_edges.at(m_Mesh_T1.at(i).e1);//e1编号
-// 		m_Edge_T1.push_back(m_CurrentEdge);
-// 		m_CurrentEdge=m_Mesh_edges.at(m_Mesh_T1.at(i).e2);
-// 		m_Edge_T1.push_back(m_CurrentEdge);
-// 		m_CurrentEdge=m_Mesh_edges.at(m_Mesh_T1.at(i).e3);
-// 		m_Edge_T1.push_back(m_CurrentEdge);
-// 	}//压入边栈
-// 
-// 	while (m_Edge_T1.empty()!=true){   //栈空否
-// 		m_CurrentEdge=m_Edge_T1.back();
-// 		m_Edge_T1.pop_back();			//弹出一个边
-//		if (m_Edge_T2.empty()!=true){			//池空否
-// 			for (vector<Edge>::iterator iter=m_Edge_T2.begin();iter!=m_Edge_T2.end(); iter++)	{
-// 				if (m_CurrentEdge.isEqual(*iter)) {
-// 					m_Edge_T2.erase(iter); //删除池中相同边
-// 					break;
-// 				}
-//			}
-//			m_Edge_T2.push_back(m_CurrentEdge);// 边 压入边池
-//		}else{
-//			m_Edge_T2.push_back(m_CurrentEdge);// 边 压入边池
-//		}
-//	}
-	//边界保存在 m_Edge_T2 中
-
-//	m_Edge_Border=m_Edge_T2;
-//}
-}
-
-// bool Mesh::CompareEdgesinT2(){	
-// 	for (int i=0; i<m_Edge_T2.size(); i++)	{
-// 		bool is=m_CurrentEdge.isEqual(m_Edge_T2.at(i));
-// 		if (is==true) return true; 
-// 	}
-// 	return false;
-// }
 void Mesh::ComputeCurrEnery(){
 	//计算T1变形能量
 }

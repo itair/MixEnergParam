@@ -177,10 +177,8 @@ public:
 	bool RunFlatPara(void);
 		void GetFirstTri(void);
 		bool GetNextVetex(void);
-	void Flatten1stTir(void);
-	void GetNextTri(void);
-	void GetT1Boundary(void);
-	//				bool CompareEdgesinT2();
+		void Flatten1stTir(void);
+	
 	void ComputeCurrEnery(void);	 
 	void SloveMinEnery(void);
 	void MapToSquare(void);
