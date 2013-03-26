@@ -259,7 +259,7 @@ void TriMesh::GetNextTri(){
 }
 
 void TriMesh::GetT1Boundary(){  
-	for (int i=0; i<m_Mesh_T1.size(); i++)	{
+	for (vector<Edge>::size_type i=0; i < m_Mesh_T1.size(); i++)	{
 		//int e=(int)m_Mesh_T1.at(i).v1;
 		m_CurrentEdge=m_Mesh_edges.at(m_Mesh_T1.at(i).e1);//e1编号
 		m_Edge_T1.push_back(m_CurrentEdge);
@@ -289,13 +289,6 @@ void TriMesh::GetT1Boundary(){
 	 m_Edge_Border=m_Edge_T2;
 }
 
-// bool TriMesh::CompareEdgesinT2(){	
-// 	for (int i=0; i<m_Edge_T2.size(); i++)	{
-// 		bool is=m_CurrentEdge.isEqual(m_Edge_T2.at(i));
-// 		if (is==true) return true; 
-// 	}
-// 	return false;
-// }
 void TriMesh::ComputeCurrEnery(){
 	//计算T1变形能量
 }

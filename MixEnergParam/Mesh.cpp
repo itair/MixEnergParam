@@ -116,41 +116,33 @@ void Mesh::ResultOutput(string filename){
 
 void Mesh::InitMesh(){
 	//求各个边表  利用面栈 和边栈
-	//m_Mesh_T0.clear();	
-	//m_Mesh_T0=m_Mesh_faces;
 	m_Mesh_edges.clear();
 	Index faceIndex=0;
 	//Index vetexIndex=0;	
-	for (vector<Face>::iterator iter=m_Mesh_faces.begin();
-								iter!=m_Mesh_faces.end();)	{
+	for (vector<Face>::iterator iter=m_Mesh_faces.begin();	iter!=m_Mesh_faces.end();)	{
 			//顶点邻接当前面;
 			iter->mark=false;
 			m_Face_T2.push_back(faceIndex);
-			//m_CurrentVex.adjEgde.clear();
 			ProcessVetex(iter,faceIndex);
 			ProcessEdge(iter,faceIndex);
 			iter->index=faceIndex++ ;
 			++iter;
-	}
-		
+	}		
 	SimplyEdge();//合并 重复统计的边/. 迭代器冒泡;
 	ScanEdge(); //补全 面的临街面 点的邻接边;
 	ProcessFace();
 		
 }
 
-void Mesh::ProcessVetex(vector<Face>::iterator iter,Index faceIndex){
+void Mesh::ProcessVetex(vector<Face>::iterator iter, Index faceIndex){
 	//三个顶点 保存索引号 == 面片中的索引号
 	m_Mesh_vetexs.at(iter->v1).index=iter->v1;
 	m_Mesh_vetexs.at(iter->v2).index=iter->v2;
 	m_Mesh_vetexs.at(iter->v3).index=iter->v3;
-
 	//把当前面的索引号 加入 三个顶点的邻接面表;	
 	m_Mesh_vetexs.at(iter->v1).adjFace.push_back(faceIndex);
 	m_Mesh_vetexs.at(iter->v2).adjFace.push_back(faceIndex);
 	m_Mesh_vetexs.at(iter->v3).adjFace.push_back(faceIndex);
-
-
 }
 
 void Mesh::ProcessEdge(vector<Face>::iterator iter,Index faceIndex){
@@ -209,11 +201,13 @@ void Mesh::SimplyEdge(){
 		oldedgeIndex1=iter->index;
 		m_Mesh_faces.at(face1).SwapEdgeIndex(oldedgeIndex1,edgeIndex);
 		m_CurrentEdge.adjFace.clear();
-		m_CurrentEdge=*iter;			
+		m_CurrentEdge=*iter;	
+
 		if (iter->adjFace.size()>2){
 			cout<<"Edge Num: "<<iter->index<<endl;
 			throw	runtime_error("adjFace.size()>2!");
 		}	
+
 		m_CurrentEdge.index=edgeIndex++;
 		m_Mesh_edges.push_back(m_CurrentEdge);
 		++iter;
@@ -259,7 +253,7 @@ double Mesh::More(sVector &norm){
 void Mesh::ProcessFace(){
 	//计算 面表中 每个三角形的 法向量 填表;
 	sVector a,b,c,ab,bc,norm;
-	for (vector<Face>::iterator iter=m_Mesh_faces.begin();iter !=m_Mesh_faces.end();)	{
+	for (vector<Face>::iterator iter=m_Mesh_faces.begin(); iter !=m_Mesh_faces.end();)	{
 		a = m_Mesh_vetexs.at(iter->v1).pos;
 		b = m_Mesh_vetexs.at(iter->v2).pos;
 		c = m_Mesh_vetexs.at(iter->v3).pos;
@@ -284,7 +278,7 @@ void Mesh::MeshesOutput(string filename){
 	err  = fopen_s( &in, file, "w+" );
 	if( err == 0 ) cout<<"The file '"<<file<<"' was opened"<<endl; 
 	else cout<<"The file '"<<file<<"' was not opened"<<endl; 
-	//todo 保存 初始化后的网格数据集;
+	//TODO 保存 初始化后的网格数据集;
 	// 平面参数坐标集              vector<vetex>  m_Plane_Vertex
 	//三角面 顶点编号              vector<Triangle> m_Mesh_faces
 	//write 文件头
@@ -297,20 +291,21 @@ void Mesh::MeshesOutput(string filename){
 	//PlanePara vetex2d;
 	for (int i=0; i!=m_Mesh_vetexs.size(); i++){
 		m_CurrentVex=m_Mesh_vetexs[i];
-		fprintf_s(in,"%lf\t%lf\t%lf\n",m_CurrentVex.pos.x,m_CurrentVex.pos.y,m_CurrentVex.pos.z,m_CurrentVex.adjFace);
+		fprintf_s(in, "%lf\t%lf\t%lf\n",
+			m_CurrentVex.pos.x, m_CurrentVex.pos.y, m_CurrentVex.pos.z, m_CurrentVex.adjFace);
 	}
 	//write faces 
 	fprintf_s(in,"Faces Number: %d \n",m_Mesh_faces.size());
 	//TriAngle face2d;
 	for (int i=0; i!=m_Mesh_faces.size(); i++){
 		m_CurrentTri=m_Mesh_faces[i];
-		fprintf_s(in,"%ld\t%ld\t%ld\n",m_CurrentTri.v1,m_CurrentTri.v2,m_CurrentTri.v3);
+		fprintf_s(in, "%ld\t%ld\t%ld\n", m_CurrentTri.v1, m_CurrentTri.v2, m_CurrentTri.v3);
 	}
 	//write edges
 	fprintf_s(in,"Edges Number: %d \n",m_Mesh_edges.size());
 	for (int i=0; i!=m_Mesh_edges.size(); i++)	{
 		m_CurrentEdge=m_Mesh_edges[i];
-		fprintf_s(in,"%ld\t%ld\n",m_CurrentEdge.v1,m_CurrentEdge.v2,m_CurrentEdge.adjFace);
+		fprintf_s(in, "%ld\t%ld\n", m_CurrentEdge.v1, m_CurrentEdge.v2, m_CurrentEdge.adjFace);
 	}
 	fclose(in);
 	cout<<"Mesh Saved.\n";
@@ -330,7 +325,7 @@ bool Mesh::RunFlatPara(){
 	while (m_Face_T2.empty()!=true)	{		
 		check = GetNextVetex();
 		if (check==false && m_Face_T2.empty()!=true) {
-			cout<<"网格有洞 ,无法找到下一层T0" <<endl;
+			cout<<"网格有洞, 无法找到下一层T0... " <<endl;
 			return false;
 		}	
 		//list<Index> m_Face_T0;	// 当前 面栈
@@ -407,7 +402,7 @@ bool Mesh::GetNextVetex(){
 	//m_Vertex_Borderi中全部邻面未mark的 为新T0;
 	//新T0中 不在m_Vertex_Border中的顶点为自由顶点;
 	Index index_face;
-	//m_Edge_Border;
+
 	for (list<Index>::iterator iter = m_Face_T0.begin();
 				iter != m_Face_T0.end();	iter ++){
 		m_CurrentTri = m_Mesh_faces.at(*iter); 
@@ -415,8 +410,10 @@ bool Mesh::GetNextVetex(){
 		m_Edge_Border.push_back(m_CurrentTri.e2);
 		m_Edge_Border.push_back(m_CurrentTri.e3);
 	}
+
 	m_Edge_Border.sort();
 	m_Edge_Border.unique();
+
 	for (list<Index>::iterator iter = m_Edge_Border.begin();
 				iter != m_Edge_Border.end();	iter ++){
 		m_CurrentEdge = m_Mesh_edges.at(*iter);
@@ -429,10 +426,11 @@ bool Mesh::GetNextVetex(){
 			}
 		}
 	}
+
 	m_Vertex_Border.sort();
 	m_Vertex_Border.unique();
-
 	m_Face_T0.clear();
+
 	for (list<Index>::iterator iter = m_Vertex_Border.begin();
 				iter != m_Vertex_Border.end();	iter ++)	{
 		m_CurrentVex = m_Mesh_vetexs.at(*iter);
@@ -450,13 +448,12 @@ bool Mesh::GetNextVetex(){
 		//去除 老边界点, 一个三角形只统计一次,不会重复添加(*iter) 进 Free,删一次就够了
 		m_Vertex_Free.remove((*iter));
 	}//for
-// 	if (m_Face_T0.empty()==true) return false; //下一层找不到了
-// 	else return true;
 	return !m_Face_T0.empty();
- }
+}
 
-void Mesh::ComputeCurrEnery(){
+void Mesh::ComputeCurrEnergy(){
 	//计算T1变形能量
+
 }
 
 void Mesh::SloveMinEnery(){

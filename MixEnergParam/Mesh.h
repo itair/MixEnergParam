@@ -63,11 +63,8 @@ public:
 	vector <Index> adjFace;
 	bool mark; //多用途标记....
 public:
- Edge(){
-	 mark=false;
-	 }
-
-	void SetVexIndex(Index a,Index b){
+ Edge(){	 mark=false;	 }
+ void SetVexIndex(Index a,Index b){
 		v1= ( a < b ) ? a : b; 
 		v2= ( a >= b )? a : b;		
 	}
@@ -96,7 +93,7 @@ public:
 		if (old == e1) { e1 = newEdge ; return; }
 		if (old == e2) { e2 = newEdge ; return;}
 		if (old == e3) { e3 = newEdge ; return; }
-		//system("Error"}; //无匹配
+		
 	}
 	bool operator == (Face fa){
 		return index==fa.index;
@@ -179,7 +176,7 @@ public:
 		bool GetNextVetex(void);
 		void Flatten1stTir(void);
 	
-	void ComputeCurrEnery(void);	 
+	void ComputeCurrEnergy(void);	 
 	void SloveMinEnery(void);
 	void MapToSquare(void);
 	//void ShowMesh();
