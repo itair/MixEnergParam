@@ -145,6 +145,9 @@ public:
 	Edge	m_CurrentEdge;
 	PlanePara m_CurrentPlane;
 
+	sVector m_PlaneOrigin; //正交坐标系原点 对应的顶点坐标,firstTri设定v1
+	sVector m_PlaneU;
+	sVector m_PlaneV;
 	vector<PlanePara>  m_Plane_Vertex;
 
 	char  m_Mesh_format[5];

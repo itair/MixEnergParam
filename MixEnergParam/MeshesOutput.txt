@@ -1,6 +1,6 @@
 Meshes file : MeshesOutput.txt
 Source file : nefertiti.off
-MeshFile format: ,OFF
+MeshFile format: OFF
 Vetex Number: 299 
 -1.921780	0.334600	-1.851650
 -1.870020	-0.147810	-1.590690

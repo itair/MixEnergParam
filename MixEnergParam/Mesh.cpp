@@ -250,6 +250,7 @@ sVector Mesh::Cross(sVector &v1,sVector &v2){
 double Mesh::More(sVector &norm){
 	return sqrt(norm.x *norm.x + norm.y*norm.y + norm.z*norm.z);
 }
+
 void Mesh::ProcessFace(){
 	//计算 面表中 每个三角形的 法向量 填表;
 	sVector a,b,c,ab,bc,norm;
@@ -263,10 +264,9 @@ void Mesh::ProcessFace(){
 		iter->normal = norm;
 		++iter;
 	}
-
 }
 
-void Mesh::MeshesOutput(string filename){
+void Mesh::MeshesOutput(string filename) {
 	FILE *in=NULL;
 	const char* file;
 	string file_result("MeshesOutput.txt");
@@ -285,7 +285,7 @@ void Mesh::MeshesOutput(string filename){
 	fseek(in,0L,SEEK_SET);	
 	fprintf_s(in,"Meshes file : %s\n",file);
 	fprintf_s(in,"Source file : %s\n",sourcefile);
-	fprintf_s(in,"MeshFile format: ,%s\n",m_Mesh_format);
+	fprintf_s(in,"MeshFile format: %s\n",m_Mesh_format);
 	//write 顶点
 	fprintf_s(in,"Vetex Number: %d \n",m_Mesh_vetexs.size());
 	//PlanePara vetex2d;
@@ -345,7 +345,6 @@ bool Mesh::RunFlatPara(){
 		//m_Face_T1.merge(m_Face_T0);
 	}
 	return true;
-
 }
 void Mesh::GetFirstTri(){
 	//放置第一个三角形
@@ -371,17 +370,23 @@ void Mesh::Flatten1stTir(){
 	B =  c - a ;
 	N = m_CurrentTri.normal;
 	X = NormalCross( N, B ); //u方向
+	m_PlaneU=X;
 	Y = Cross( N, B );
 	XB= Cross( X, B );
 	more=More(XB);
 	Y = Y / more;   //v方向
+	m_PlaneV=Y;
 	// 嵌入 2d 平面;
 	//v1 = (0,0);
 	index_vertex = m_CurrentTri.v1;
+	m_CurrentPos = m_Mesh_vetexs.at(index_vertex).pos;
+	m_PlaneOrigin = m_CurrentPos;    //2D原点
+
 	m_CurrentPlane.index=index_vertex;
 	m_CurrentPlane.u = 0.0 ;
 	m_CurrentPlane.v = 0.0 ;
 	m_Plane_Vertex.push_back(m_CurrentPlane);
+	
 	// v2= ( A.X , A.Y);
 	index_vertex = m_CurrentTri.v2;
 	m_CurrentPlane.index=index_vertex;
