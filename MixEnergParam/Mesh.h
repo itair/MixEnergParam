@@ -15,11 +15,13 @@
 #include <list>
 #include <algorithm>
 #include <iostream>
-
+#include <complex>
+//#include "Complex.cpp"
 using namespace std;
 
 typedef  unsigned long Index;
 typedef  double Energy;
+typedef  complex<double> Complex;
 class sVector{
 public:
 	double x,y,z;
@@ -89,6 +91,16 @@ public:
 	}
 
 };
+class PlanePara{
+public:
+	Index index; //对应顶点的 索引
+	double u;
+	double v;
+public:
+	void setParaPos(PlanePara &pl){
+		u=pl.u;	   v=pl.v;
+	}
+};
 
 class Face{
 public:
@@ -98,6 +110,7 @@ public:
 	bool mark; //多用途标记....
 	PlanePara p1,p2,p3;
 	sVector normal;
+	double Area;
 	vector <Index> adjFace;
 public:	
 	void SetVextexIndex(Index a,Index b,Index c){
@@ -122,20 +135,22 @@ class Border{
 	Index faceIndex;    // 所属面片索引  
 };
 
-class PlanePara{
+class PDerivative{
 public:
-	Index index; //对应顶点的 索引
-	double u;
-	double v;
+	Complex fu;
+	Complex fv;
 public:
-	void setParaPos(PlanePara &pl){
-		u=pl.u;	   v=pl.v;
+	double DotProduct(Complex fu, Complex fv ){
+		double Real = real(fu) * real(fv) - imag(fu)*imag(fv);
+		return Real;
 	}
-};
+}; 
+
+
 
 class Mesh{
 	//变量
-public:
+private:
 	vector<Face>	m_Mesh_faces;
 	vector<Vetex>	m_Mesh_vetexs;
 	vector<Edge>    m_Mesh_edges;
@@ -157,6 +172,7 @@ public:
 	sVector m_CurrentPos;
 	Vetex	m_CurrentVex;
 	Face  m_CurrentTri;
+	Face  m_OldTri;
 	Edge	m_CurrentEdge;
 	PlanePara m_CurrentPlane;
 
@@ -200,7 +216,9 @@ public:
 		bool GetNextVetex(void);
 		void Flatten1stTir(void);
 	
-	void ComputeCurrEnergy(void);	 
+	void ComputeCurrEnergy(void);	
+	    PDerivative PartialDerivative (Face Old, Face New);
+ 
 	void SloveMinEnery(void);
 	void MapToSquare(void);
 	// 自由定点在初始平面上的投影点

@@ -252,7 +252,7 @@ double Mesh::More(sVector &norm){
 }
 
 void Mesh::ProcessFace(){
-	//计算 面表中 每个三角形的 法向量 和 局部正交基 平面坐标 填表;
+	//计算 面表中 每个三角形的 法向量 和 局部正交基 平面坐标 填表; 还有面积.
 	sVector a,b,c,A,B,X,Y,N,XB;
 	double more;
 	for (vector<Face>::iterator iter=m_Mesh_faces.begin(); iter !=m_Mesh_faces.end();)	{
@@ -278,6 +278,7 @@ void Mesh::ProcessFace(){
 		//p3= ( B.X , B.Y);
 		(*iter).p3.u = B * X ;	
 		(*iter).p3.v = B * Y ;
+		(*iter).Area = 0.5 * abs ((*iter).p2.u * (*iter).p3.v) - ((*iter).p2.v - (*iter).p3.u );
 		++iter;
 	}
 }
@@ -476,23 +477,51 @@ bool Mesh::GetNextVetex(){
 }
 
 void Mesh::ComputeCurrEnergy(){
-	//计算T0变形能量   m_Face_T0 ,m_Plane_T0
-	E=0.0;
-	E1=0.0;
-	E2=0.0;
-	PlanePara Pl; //原始正交基下三角面的坐标
-	Energy fu,fv;
-	for (list<Index>iterator iter = m_Face_T0.begin();
+	//计算T0变形能量   m_Face_T0 ,m_Plane_T0	
+	for ( list<Index>::iterator iter = m_Face_T0.begin();
 													iter != m_Face_T0.end(); iter++){	
-		m_CurrentTri = m_Mesh_faces.at(*iteir);
-		m_CurrentPlane=ComputePlaneBasePos(m_CurrentTri);
-		pl = PartialDerivative (m_CurrentPlane);
-		fu = Pl.u;
-		fv = Pl.v;
-		E1 = fu*fu + fv*fv ;
-		E2 = (fu*fu)*(fv*fv)-(fu*fv)*(fu*fv)-1;
-		E2= E2*E2;
-		E= m_epsilon * E1 + (1-m_epsilon) * e2;
+		m_OldTri = m_Mesh_faces.at(*iter);
+		m_CurrentTri=m_OldTri;
+		for (vector<PlanePara>::iterator iter2 = m_Plane_T0.begin();
+							iter2 != m_Plane_T0.end(); iter2++){
+					if ((*iter2).index == m_OldTri.v1) {
+						m_CurrentTri.p1 = *iter2;
+						continue;
+					}
+					if ((*iter2).index == m_OldTri.v2) {
+						m_CurrentTri.p2 = *iter2;
+						continue;
+					}
+					if ((*iter2).index == m_OldTri.v3) {
+						m_CurrentTri.p3 = *iter2;
+						continue;
+					}
+		}
+		PDerivative pl; //原始正交基下三角面的坐标
+		Complex fu,fv;
+		Complex f,I, detI;
+		pl = PartialDerivative ( m_OldTri, m_CurrentTri);
+		E=0.0;
+		E1=0.0;
+		E2=0.0;
+// 		E1 = (pl.fu * pl.fu) + (pl.fv * pl.fv) ;
+// 		E2 = (pl.fu*pl.fu)*(pl.fv*pl.fv)-(pl.fu*pl.fv)*(pl.fu*pl.fv)-1;
+// 		E2= E2*E2;
+// 		E= m_epsilon * E1 + (1-m_epsilon) * e2;
+// 			Eu = abs(pl.fu); 
+// 			Eu = Eu * Eu;
+// 			Ev = abs(pl.fv);
+// 			Ev = Ev * Ev;
+		fu = pl.fu;
+		fv = pl.fv;
+			I = Complex (0,1);
+			f = fu + I*fv ;
+			E1 = abs(f);
+			E1 = E1 *E1;
+			detI = pl.DotProduct(fu,fu) * pl.DotProduct(fu,fu) - pl.DotProduct(fu,fu) * pl.DotProduct(fu,fu);
+			E2 = detI -1 ;
+			E2 = E2 * E2;
+
 	}
 
 }
@@ -518,4 +547,26 @@ void Mesh::FreeVertexProjection(void){
 				m_CurrentPlane.v = footpoint * m_PlaneV ;
 				m_Plane_T0.push_back(m_CurrentPlane);
 	}		
+}
+PDerivative Mesh::PartialDerivative(Face OldTri, Face NewTri){
+	//求偏导
+	PDerivative pl;
+	Complex fu,fv;
+	Complex p1 ,p2 ,p3;
+	double u1,u2,u3,v1,v2,v3;
+	double Area= OldTri.area;
+	p1 = Complex( NewTri.p1.u, NewTri.p1.v);
+	p2 = Complex( NewTri.p2.u, NewTri.p2.v);
+	p3 = Complex( NewTri.p3.u, NewTri.p3.v);
+	u1 = OldTri.p1.u;
+	u2 = OldTri.p2.u;
+	u3 = OldTri.p3.u;
+	v1 = OldTri.p1.v;
+	v2 = OldTri.p2.v;
+	v3 = OldTri.p3.v;
+	fu = (v2-v3)*p1 + (v3-v1)*p2 + (v1-v2)*p3;
+	pl.fu = fu / (2*Area);
+	fv = (u2-u3)*p1 + (u3-u1)*p2 + (u1-u2)*p3;
+	pl.fv = fv / (2*Area);
+	return pl;
 }
