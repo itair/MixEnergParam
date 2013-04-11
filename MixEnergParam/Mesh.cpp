@@ -252,16 +252,32 @@ double Mesh::More(sVector &norm){
 }
 
 void Mesh::ProcessFace(){
-	//计算 面表中 每个三角形的 法向量 填表;
-	sVector a,b,c,ab,bc,norm;
+	//计算 面表中 每个三角形的 法向量 和 局部正交基 平面坐标 填表;
+	sVector a,b,c,A,B,X,Y,N,XB;
+	double more;
 	for (vector<Face>::iterator iter=m_Mesh_faces.begin(); iter !=m_Mesh_faces.end();)	{
 		a = m_Mesh_vetexs.at(iter->v1).pos;
 		b = m_Mesh_vetexs.at(iter->v2).pos;
 		c = m_Mesh_vetexs.at(iter->v3).pos;
- 		ab = a - b;
- 		bc = b - c;
-		norm=NormalCross(ab,bc);
-		iter->normal = norm;
+ 		//求一组正交基		
+		A =  b - a ;
+		B =  c - a ;
+		N = NormalCross( A , B);
+		(*iter).normal = N ;
+		X = NormalCross( N, B ); //u方向
+		Y = Cross( N, B );
+		XB= Cross( X, B );
+		more=More(XB);
+		Y = Y / more;   //v方向
+		//p1 = (0,0);
+		(*iter).p1.u =0.0;
+		(*iter). p1.v=0.0;
+		// p2= ( A.X , A.Y);
+		(*iter).p2.u = A*X ;	
+		(*iter).p2.v = A*Y;
+		//p3= ( B.X , B.Y);
+		(*iter).p3.u = B * X ;	
+		(*iter).p3.v = B * Y ;
 		++iter;
 	}
 }
@@ -327,10 +343,10 @@ bool Mesh::RunFlatPara(){
 		if (check==false && m_Face_T2.empty()!=true) {
 			cout<<"网格有洞, 无法找到下一层T0... " <<endl;
 			return false;
-		}	
+		  }	
 		//list<Index> m_Face_T0;	// 当前 面栈
-		//  list<Index> m_Vertex_Free;	//当前的 自由点
-
+		//  list<Index> m_Vertex_Free;	//当前的 自由点		
+		FreeVertexProjection();//计算自由点 在 初始平面的上的投影 并转换为平面坐标 uv 存入 m_Plane_T0 
 //TODO 计算 T0 能量表示;
 //		ComputeCurrEnery();
 //TODO 最小化问题 求出 m_Vertex_Free 对应 2D坐标 加入 m_Plane_Vertex
@@ -369,6 +385,7 @@ void Mesh::Flatten1stTir(){
 	A =  b - a ;
 	B =  c - a ;
 	N = m_CurrentTri.normal;
+	m_PlaneNormal=N; //嵌入平面的统一法向量
 	X = NormalCross( N, B ); //u方向
 	m_PlaneU=X;
 	Y = Cross( N, B );
@@ -418,7 +435,7 @@ bool Mesh::GetNextVetex(){
 
 	m_Edge_Border.sort();
 	m_Edge_Border.unique();
-
+	m_Vertex_Border.clear();// 
 	for (list<Index>::iterator iter = m_Edge_Border.begin();
 				iter != m_Edge_Border.end();	iter ++){
 		m_CurrentEdge = m_Mesh_edges.at(*iter);
@@ -435,7 +452,7 @@ bool Mesh::GetNextVetex(){
 	m_Vertex_Border.sort();
 	m_Vertex_Border.unique();
 	m_Face_T0.clear();
-
+	m_Vertex_Free.clear();//清栈
 	for (list<Index>::iterator iter = m_Vertex_Border.begin();
 				iter != m_Vertex_Border.end();	iter ++)	{
 		m_CurrentVex = m_Mesh_vetexs.at(*iter);
@@ -453,14 +470,52 @@ bool Mesh::GetNextVetex(){
 		//去除 老边界点, 一个三角形只统计一次,不会重复添加(*iter) 进 Free,删一次就够了
 		m_Vertex_Free.remove((*iter));
 	}//for
+	m_Vertex_Free.sort();
+	m_Vertex_Free.unique();
 	return !m_Face_T0.empty();
 }
 
 void Mesh::ComputeCurrEnergy(){
-	//计算T1变形能量
+	//计算T0变形能量   m_Face_T0 ,m_Plane_T0
+	E=0.0;
+	E1=0.0;
+	E2=0.0;
+	PlanePara Pl; //原始正交基下三角面的坐标
+	Energy fu,fv;
+	for (list<Index>iterator iter = m_Face_T0.begin();
+													iter != m_Face_T0.end(); iter++){	
+		m_CurrentTri = m_Mesh_faces.at(*iteir);
+		m_CurrentPlane=ComputePlaneBasePos(m_CurrentTri);
+		pl = PartialDerivative (m_CurrentPlane);
+		fu = Pl.u;
+		fv = Pl.v;
+		E1 = fu*fu + fv*fv ;
+		E2 = (fu*fu)*(fv*fv)-(fu*fv)*(fu*fv)-1;
+		E2= E2*E2;
+		E= m_epsilon * E1 + (1-m_epsilon) * e2;
+	}
 
 }
 
 void Mesh::SloveMinEnery(){
 	//解最小化问题
+}
+
+// 自由定点在初始平面上的投影点
+void Mesh::FreeVertexProjection(void){
+	//m_Vertex_Free ; m_Vertex_Border; m_PlaneNormal; m_Face_T0;
+	sVector footpoint; //垂足 
+	double t;//parameter_t
+ m_Plane_T0.clear();
+	for (list<Index>::iterator iter = m_Vertex_Free.begin();
+											iter != m_Vertex_Free.end(); iter++)	{
+				m_CurrentPos = (m_Mesh_vetexs.at(*iter )).pos;
+				t = (m_CurrentPos - m_PlaneOrigin) * m_PlaneNormal;
+				t = t / (m_PlaneNormal * m_PlaneNormal);
+				footpoint = ( m_PlaneNormal * t ) + m_CurrentPos ;
+				m_CurrentPlane.index = *iter ;
+				m_CurrentPlane.u = footpoint * m_PlaneU ;
+				m_CurrentPlane.v = footpoint * m_PlaneV ;
+				m_Plane_T0.push_back(m_CurrentPlane);
+	}		
 }

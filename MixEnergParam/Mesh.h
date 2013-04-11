@@ -19,27 +19,43 @@
 using namespace std;
 
 typedef  unsigned long Index;
-
+typedef  double Energy;
 class sVector{
 public:
 	double x,y,z;
+	//一些计算
+	sVector& operator+ (const sVector &sv) {
+		this->x = x + sv.x;
+		this->y = y + sv.y;
+		this->z = z + sv.z;
+		return *this;
+	}
+	
 	sVector& operator- (const sVector &sv) {
 		this->x=x-sv.x;
 		this->y=y-sv.y;
 		this->z=z-sv.z;
 		return *this;
 	}
+
 	sVector& operator/ (const double real){
 		this->x = x / real;
 		this->y = y / real;
 		this->z = z / real;
 		return *this;
 	}
+
 	double operator* (sVector &sv){
 		this->x = x * sv.x;
 		this->y = y * sv.y;
 		this->z = z * sv.z;
 		return  (x*x + y*y+ z*z);
+	}
+	sVector operator* (double real){
+		this->x = x * real;
+		this->y = y * real;
+		this->z = z * real;
+		return *this;
 	}
 };
 
@@ -80,6 +96,7 @@ public:
 	Index v1,v2,v3;
 	Index e1,e2,e3;
 	bool mark; //多用途标记....
+	PlanePara p1,p2,p3;
 	sVector normal;
 	vector <Index> adjFace;
 public:	
@@ -92,13 +109,11 @@ public:
 	void SwapEdgeIndex(Index old,  Index newEdge ) {
 		if (old == e1) { e1 = newEdge ; return; }
 		if (old == e2) { e2 = newEdge ; return;}
-		if (old == e3) { e3 = newEdge ; return; }
-		
+		if (old == e3) { e3 = newEdge ; return; }		
 	}
 	bool operator == (Face fa){
 		return index==fa.index;
-	}
-	
+	}	
 };
 
 class Border{
@@ -138,7 +153,7 @@ public:
 	list<Index> m_Vertex_Border; //边界点
 	list<Index> m_Vertex_Free;	//自由点
 
-	int m_epsilon;
+	double  m_epsilon;
 	sVector m_CurrentPos;
 	Vetex	m_CurrentVex;
 	Face  m_CurrentTri;
@@ -146,9 +161,15 @@ public:
 	PlanePara m_CurrentPlane;
 
 	sVector m_PlaneOrigin; //正交坐标系原点 对应的顶点坐标,firstTri设定v1
-	sVector m_PlaneU;
-	sVector m_PlaneV;
-	vector<PlanePara>  m_Plane_Vertex;
+ 	sVector m_PlaneU;  //正交基 X
+ 	sVector m_PlaneV;	//正交基 Y
+	sVector m_PlaneNormal; //全局平面法向量
+	vector<PlanePara>  m_Plane_T0; //T0中未优化的平面点 uv参数 集
+	vector<PlanePara>  m_Plane_Vertex; //输出的自由边界 平面uv参数 点集 
+
+	Energy E;
+	Energy E1;
+	Energy E2;
 
 	char  m_Mesh_format[5];
 	string filename;
@@ -182,8 +203,8 @@ public:
 	void ComputeCurrEnergy(void);	 
 	void SloveMinEnery(void);
 	void MapToSquare(void);
-	//void ShowMesh();
-	//void showParam();
+	// 自由定点在初始平面上的投影点
 
 
+	void FreeVertexProjection(void);
 };
