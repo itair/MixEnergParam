@@ -2,6 +2,7 @@
 
 #include "StdAfx.h"
 #include "Mesh.h"
+#include <cmath>
 using namespace std;
 
 Mesh::Mesh(){
@@ -11,6 +12,7 @@ Mesh::Mesh(){
 	m_Mesh_vetexs.clear();
 	m_Edge_Border.clear();
 	m_Edge_T1.clear();	
+	m_epsilon = 0.5;
 }
 
 Mesh::~Mesh(){
@@ -233,7 +235,7 @@ sVector Mesh::NormalCross( sVector &v1, sVector&v2 ){
 	double more; 	
 	norm = Cross( v1 , v2 );
 	more = More( norm );
-	norm =norm / more;
+	norm = norm / more;
 	return  norm;	
 }
 
@@ -248,13 +250,13 @@ sVector Mesh::Cross(sVector &v1,sVector &v2){
 }
 
 double Mesh::More(sVector &norm){
-	return sqrt(norm.x *norm.x + norm.y*norm.y + norm.z*norm.z);
+	return sqrt((norm.x *norm.x) + (norm.y*norm.y) + (norm.z*norm.z));
 }
 
 void Mesh::ProcessFace(){
 	//计算 面表中 每个三角形的 法向量 和 局部正交基 平面坐标 填表; 还有面积.
 	sVector a,b,c,A,B,X,Y,N,XB;
-	double more;
+	double more,Area;
 	for (vector<Face>::iterator iter=m_Mesh_faces.begin(); iter !=m_Mesh_faces.end();)	{
 		a = m_Mesh_vetexs.at(iter->v1).pos;
 		b = m_Mesh_vetexs.at(iter->v2).pos;
@@ -265,10 +267,10 @@ void Mesh::ProcessFace(){
 		N = NormalCross( A , B);
 		(*iter).normal = N ;
 		X = NormalCross( N, B ); //u方向
-		Y = Cross( N, B );
+		//Y = Cross( N, B );
 		XB= Cross( X, B );
 		more=More(XB);
-		Y = Y / more;   //v方向
+		Y = XB / more;   //v方向
 		//p1 = (0,0);
 		(*iter).p1.u =0.0;
 		(*iter). p1.v=0.0;
@@ -278,7 +280,9 @@ void Mesh::ProcessFace(){
 		//p3= ( B.X , B.Y);
 		(*iter).p3.u = B * X ;	
 		(*iter).p3.v = B * Y ;
-		(*iter).Area = 0.5 * abs ((*iter).p2.u * (*iter).p3.v) - ((*iter).p2.v - (*iter).p3.u );
+		 Area = 0.5 * ( ((*iter).p2.u * (*iter).p3.v) - ((*iter).p2.v * (*iter).p3.u));
+		 (*iter).Area = fabs(Area);
+		//assert(  (*iter).Area<=0 );
 		++iter;
 	}
 }
@@ -349,7 +353,7 @@ bool Mesh::RunFlatPara(){
 		//  list<Index> m_Vertex_Free;	//当前的 自由点		
 		FreeVertexProjection();//计算自由点 在 初始平面的上的投影 并转换为平面坐标 uv 存入 m_Plane_T0 
 //TODO 计算 T0 能量表示;
-//		ComputeCurrEnery();
+		ComputeCurrEnergy();
 //TODO 最小化问题 求出 m_Vertex_Free 对应 2D坐标 加入 m_Plane_Vertex
 //		SloveMinEnery();
 
@@ -389,10 +393,10 @@ void Mesh::Flatten1stTir(){
 	m_PlaneNormal=N; //嵌入平面的统一法向量
 	X = NormalCross( N, B ); //u方向
 	m_PlaneU=X;
-	Y = Cross( N, B );
+	//Y = Cross( N, B );
 	XB= Cross( X, B );
 	more=More(XB);
-	Y = Y / more;   //v方向
+	Y = XB / more;   //v方向
 	m_PlaneV=Y;
 	// 嵌入 2d 平面;
 	//v1 = (0,0);
@@ -469,7 +473,7 @@ bool Mesh::GetNextVetex(){
 			}//if
 		}
 		//去除 老边界点, 一个三角形只统计一次,不会重复添加(*iter) 进 Free,删一次就够了
-		m_Vertex_Free.remove((*iter));
+		//m_Vertex_Free.remove((*iter));
 	}//for
 	m_Vertex_Free.sort();
 	m_Vertex_Free.unique();
@@ -499,36 +503,30 @@ void Mesh::ComputeCurrEnergy(){
 		}
 		PDerivative pl; //原始正交基下三角面的坐标
 		Complex fu,fv;
-		Complex f,I, detI;
+		Complex f,I;
+		Energy detI;
 		pl = PartialDerivative ( m_OldTri, m_CurrentTri);
-		E=0.0;
+		Energy EE=0.0;
+		E=0;
 		E1=0.0;
 		E2=0.0;
-// 		E1 = (pl.fu * pl.fu) + (pl.fv * pl.fv) ;
-// 		E2 = (pl.fu*pl.fu)*(pl.fv*pl.fv)-(pl.fu*pl.fv)*(pl.fu*pl.fv)-1;
-// 		E2= E2*E2;
-// 		E= m_epsilon * E1 + (1-m_epsilon) * e2;
-// 			Eu = abs(pl.fu); 
-// 			Eu = Eu * Eu;
-// 			Ev = abs(pl.fv);
-// 			Ev = Ev * Ev;
 		fu = pl.fu;
 		fv = pl.fv;
 			I = Complex (0,1);
 			f = fu + I*fv ;
 			E1 = abs(f);
 			E1 = E1 *E1;
-			detI = pl.DotProduct(fu,fu) * pl.DotProduct(fu,fu) - pl.DotProduct(fu,fu) * pl.DotProduct(fu,fu);
+			detI = (pl.DotProduct(pl.fu,pl.fu) * pl.DotProduct(pl.fv,pl.fv)) - 
+						 (pl.DotProduct(pl.fu,pl.fv) * pl.DotProduct(pl.fu,pl.fv));
 			E2 = detI -1 ;
 			E2 = E2 * E2;
-
+			EE = m_epsilon * E1 + (1 -m_epsilon ) *E2;
+			E = E + EE;
 	}
-
+	//取得 E  初始值 对应当前T0
 }
 
-void Mesh::SloveMinEnery(){
-	//解最小化问题
-}
+
 
 // 自由定点在初始平面上的投影点
 void Mesh::FreeVertexProjection(void){
@@ -539,13 +537,16 @@ void Mesh::FreeVertexProjection(void){
 	for (list<Index>::iterator iter = m_Vertex_Free.begin();
 											iter != m_Vertex_Free.end(); iter++)	{
 				m_CurrentPos = (m_Mesh_vetexs.at(*iter )).pos;
-				t = (m_CurrentPos - m_PlaneOrigin) * m_PlaneNormal;
-				t = t / (m_PlaneNormal * m_PlaneNormal);
-				footpoint = ( m_PlaneNormal * t ) + m_CurrentPos ;
+	//			t = m_PlaneNormal * (m_CurrentPos - m_PlaneOrigin);
+	//			t = t / (m_PlaneNormal * m_PlaneNormal);//自乘造成 变换
+	//			footpoint = ( m_PlaneNormal * t ) + m_CurrentPos ;
+				footpoint = m_CurrentPos - m_PlaneOrigin ;
+					t = footpoint * m_PlaneNormal;
+				footpoint = m_CurrentPos - ( m_PlaneNormal * t);
 				m_CurrentPlane.index = *iter ;
 				m_CurrentPlane.u = footpoint * m_PlaneU ;
 				m_CurrentPlane.v = footpoint * m_PlaneV ;
-				m_Plane_T0.push_back(m_CurrentPlane);
+				m_Plane_T0.push_back(m_CurrentPlane)	;
 	}		
 }
 PDerivative Mesh::PartialDerivative(Face OldTri, Face NewTri){
@@ -554,7 +555,7 @@ PDerivative Mesh::PartialDerivative(Face OldTri, Face NewTri){
 	Complex fu,fv;
 	Complex p1 ,p2 ,p3;
 	double u1,u2,u3,v1,v2,v3;
-	double Area= OldTri.area;
+	double Area= OldTri.Area;
 	p1 = Complex( NewTri.p1.u, NewTri.p1.v);
 	p2 = Complex( NewTri.p2.u, NewTri.p2.v);
 	p3 = Complex( NewTri.p3.u, NewTri.p3.v);
@@ -564,9 +565,14 @@ PDerivative Mesh::PartialDerivative(Face OldTri, Face NewTri){
 	v1 = OldTri.p1.v;
 	v2 = OldTri.p2.v;
 	v3 = OldTri.p3.v;
-	fu = (v2-v3)*p1 + (v3-v1)*p2 + (v1-v2)*p3;
+	fu = ((v2-v3)*p1) + ((v3-v1)*p2) + ((v1-v2)*p3);
+
 	pl.fu = fu / (2*Area);
-	fv = (u2-u3)*p1 + (u3-u1)*p2 + (u1-u2)*p3;
+	fv = ((u2-u3)*p1) + ((u3-u1)*p2) + ((u1-u2)*p3);
 	pl.fv = fv / (2*Area);
 	return pl;
+}
+
+void Mesh::SloveMinEnery(){
+	//解最小化问题
 }

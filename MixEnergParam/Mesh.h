@@ -26,38 +26,43 @@ class sVector{
 public:
 	double x,y,z;
 	//一些计算
-	sVector& operator+ (const sVector &sv) {
-		this->x = x + sv.x;
-		this->y = y + sv.y;
-		this->z = z + sv.z;
-		return *this;
+	sVector operator+ (const sVector &sv) {
+		sVector res;
+		res.x = x + sv.x;
+		res.y = y + sv.y;
+		res.z = z + sv.z;
+		return res;
 	}
 	
-	sVector& operator- (const sVector &sv) {
-		this->x=x-sv.x;
-		this->y=y-sv.y;
-		this->z=z-sv.z;
-		return *this;
+	sVector operator- (const sVector &sv) {
+		sVector res;
+		res.x = x - sv.x;
+		res.y = y - sv.y;
+		res.z = z - sv.z;
+		return res;
 	}
 
-	sVector& operator/ (const double real){
-		this->x = x / real;
-		this->y = y / real;
-		this->z = z / real;
-		return *this;
+	sVector operator/ (const double real){
+		sVector res;
+		res.x = x / real;
+		res.y = y / real;
+		res.z = z / real;
+		return res;
 	}
 
-	double operator* (sVector &sv){
-		this->x = x * sv.x;
-		this->y = y * sv.y;
-		this->z = z * sv.z;
-		return  (x*x + y*y+ z*z);
+	double operator* (const sVector &sv){
+		double xx,yy,zz;
+		xx = x * sv.x;
+		yy = y * sv.y;
+		zz = z * sv.z;
+		return  (xx*xx + yy*yy+ zz*zz);
 	}
-	sVector operator* (double real){
-		this->x = x * real;
-		this->y = y * real;
-		this->z = z * real;
-		return *this;
+	sVector operator* (const double real){
+		sVector res;
+		res.x = x * real;
+		res.y = y * real;
+		res.z = z * real;
+		return res;
 	}
 };
 
@@ -168,7 +173,7 @@ private:
 	list<Index> m_Vertex_Border; //边界点
 	list<Index> m_Vertex_Free;	//自由点
 
-	double  m_epsilon;
+	double  m_epsilon ;
 	sVector m_CurrentPos;
 	Vetex	m_CurrentVex;
 	Face  m_CurrentTri;
@@ -178,8 +183,8 @@ private:
 
 	sVector m_PlaneOrigin; //正交坐标系原点 对应的顶点坐标,firstTri设定v1
  	sVector m_PlaneU;  //正交基 X
- 	sVector m_PlaneV;	//正交基 Y
-	sVector m_PlaneNormal; //全局平面法向量
+ 	 sVector m_PlaneV;	//正交基 Y
+	 sVector m_PlaneNormal; //全局平面法向量
 	vector<PlanePara>  m_Plane_T0; //T0中未优化的平面点 uv参数 集
 	vector<PlanePara>  m_Plane_Vertex; //输出的自由边界 平面uv参数 点集 
 
@@ -214,15 +219,17 @@ public:
 	bool RunFlatPara(void);
 		void GetFirstTri(void);
 		bool GetNextVetex(void);
+		
 		void Flatten1stTir(void);
 	
 	void ComputeCurrEnergy(void);	
 	    PDerivative PartialDerivative (Face Old, Face New);
+			void FreeVertexProjection(void);
  
 	void SloveMinEnery(void);
 	void MapToSquare(void);
 	// 自由定点在初始平面上的投影点
 
 
-	void FreeVertexProjection(void);
+	
 };
