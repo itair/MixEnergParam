@@ -13,7 +13,7 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="NewFilter1">
+    <Filter Include="网格数据结构">
       <UniqueIdentifier>{6f3c3664-f7c7-47ef-96a1-b1ed5efc36dc}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -30,6 +30,30 @@
     </ClInclude>
     <ClInclude Include="Mesh.h">
       <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="TriMesh.h">
+      <Filter>网格数据结构</Filter>
+    </ClInclude>
+    <ClInclude Include="sVector.h">
+      <Filter>网格数据结构</Filter>
+    </ClInclude>
+    <ClInclude Include="Vertex.h">
+      <Filter>网格数据结构</Filter>
+    </ClInclude>
+    <ClInclude Include="BasicDS.h">
+      <Filter>网格数据结构</Filter>
+    </ClInclude>
+    <ClInclude Include="Edge.h">
+      <Filter>网格数据结构</Filter>
+    </ClInclude>
+    <ClInclude Include="Face.h">
+      <Filter>网格数据结构</Filter>
+    </ClInclude>
+    <ClInclude Include="PlanePara.h">
+      <Filter>网格数据结构</Filter>
+    </ClInclude>
+    <ClInclude Include="PDerivative.h">
+      <Filter>网格数据结构</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -16,148 +16,18 @@
 #include <algorithm>
 #include <iostream>
 #include <complex>
+#include "BasicDS.h"
+#include "TriMesh.h"
+#include "PDerivative.h"
 //#include "Complex.cpp"
 using namespace std;
-
-typedef  unsigned long Index;
-typedef  double Energy;
-typedef  complex<double> Complex;
-class sVector{
-public:
-	double x,y,z;
-	//一些计算
-	sVector operator+ (const sVector &sv) {
-		sVector res;
-		res.x = x + sv.x;
-		res.y = y + sv.y;
-		res.z = z + sv.z;
-		return res;
-	}
-	
-	sVector operator- (const sVector &sv) {
-		sVector res;
-		res.x = x - sv.x;
-		res.y = y - sv.y;
-		res.z = z - sv.z;
-		return res;
-	}
-
-	sVector operator/ (const double real){
-		sVector res;
-		res.x = x / real;
-		res.y = y / real;
-		res.z = z / real;
-		return res;
-	}
-
-	double operator* (const sVector &sv){
-		double xx,yy,zz;
-		xx = x * sv.x;
-		yy = y * sv.y;
-		zz = z * sv.z;
-		return  (xx*xx + yy*yy+ zz*zz);
-	}
-	sVector operator* (const double real){
-		sVector res;
-		res.x = x * real;
-		res.y = y * real;
-		res.z = z * real;
-		return res;
-	}
-};
-
-class Vetex {
-public:
-	Index index;
-	sVector pos;
-	bool mark; //多用途标记....
-	vector <Index> adjFace;
-	vector <Index> adjEgde;
-public:
-	void SetPos(double dx,double dy,double dz){
-		pos.x=dx; pos.y=dy;pos.z=dz;
-	}
-};
-
-class Edge{
-public:
-	Index index;
-	Index v1,v2;
-	vector <Index> adjFace;
-	bool mark; //多用途标记....
-public:
- Edge(){	 mark=false;	 }
- void SetVexIndex(Index a,Index b){
-		v1= ( a < b ) ? a : b; 
-		v2= ( a >= b )? a : b;		
-	}
-	bool operator == (Edge edge){
-		return (v1==edge.v1 && v2==edge.v2);
-	}
-
-};
-class PlanePara{
-public:
-	Index index; //对应顶点的 索引
-	double u;
-	double v;
-public:
-	void setParaPos(PlanePara &pl){
-		u=pl.u;	   v=pl.v;
-	}
-};
-
-class Face{
-public:
-	Index index;
-	Index v1,v2,v3;
-	Index e1,e2,e3;
-	bool mark; //多用途标记....
-	PlanePara p1,p2,p3;
-	sVector normal;
-	double Area;
-	vector <Index> adjFace;
-public:	
-	void SetVextexIndex(Index a,Index b,Index c){
-		v1=a;		v2=b;		v3=c;
-	}
-	void SetEdgeIndex(Index a,Index b,Index c){
-		e1=a;		e2=b;		e3=c;
-	}
-	void SwapEdgeIndex(Index old,  Index newEdge ) {
-		if (old == e1) { e1 = newEdge ; return; }
-		if (old == e2) { e2 = newEdge ; return;}
-		if (old == e3) { e3 = newEdge ; return; }		
-	}
-	bool operator == (Face fa){
-		return index==fa.index;
-	}	
-};
-
-class Border{
-	Index v1;   // 第1 点索引 
-	Index v2;   //第2 点索引 
-	Index faceIndex;    // 所属面片索引  
-};
-
-class PDerivative{
-public:
-	Complex fu;
-	Complex fv;
-public:
-	double DotProduct(Complex fu, Complex fv ){
-		double Real = real(fu) * real(fv) - imag(fu)*imag(fv);
-		return Real;
-	}
-}; 
-
 
 
 class Mesh{
 	//变量
 private:
 	vector<Face>	m_Mesh_faces;
-	vector<Vetex>	m_Mesh_vetexs;
+	vector<Vertex>	m_Mesh_vetexs;
 	vector<Edge>    m_Mesh_edges;
 
 	list<Index> m_Face_T1;	//已处理 //序号数组
@@ -175,7 +45,7 @@ private:
 
 	double  m_epsilon ;
 	sVector m_CurrentPos;
-	Vetex	m_CurrentVex;
+	Vertex	m_CurrentVex;
 	Face  m_CurrentTri;
 	Face  m_OldTri;
 	Edge	m_CurrentEdge;
@@ -194,16 +64,17 @@ private:
 
 	char  m_Mesh_format[5];
 	string filename;
-
+	Index v123[3],v12[2],e123[3];
+	double uv[2];
+	PlanePara p123[3];
 
 	//方法
 public:
 	Mesh();
 	~Mesh();
 
-	sVector NormalCross(sVector &v1,sVector &v2);
-		sVector Cross (sVector &v1,sVector &v2);
-		double More(sVector &v1);
+	sVector NormalCross(const sVector &v1, const sVector &v2);
+	//	double More(sVector &v1);
 
 	void ReadMesh(string filename);
 	void ResultOutput(string filename);
