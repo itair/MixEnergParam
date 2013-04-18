@@ -101,9 +101,7 @@ void Mesh::ResultOutput(string filename){
 	fprintf_s(in,"Vetex Number: %d \n",m_Plane_Vertex.size());
 	double uv[2];
 	for (int i=0; i!=m_Plane_Vertex.size(); i++){
-		//vetex2d.setParaPos(m_Plane_Vertex[i]);
-		//fprintf_s(in,"%lf\t%lf\n",vetex2d.u,vetex2d.v);
-			m_Plane_Vertex.at(i).Getuv(uv);
+				m_Plane_Vertex.at(i).Getuv(uv);
 			fprintf_s(in, "%lf\t%lf\n",uv);
 	}
 	//write faces 
@@ -124,7 +122,8 @@ void Mesh::InitMesh(){
 	m_Mesh_edges.clear();
 	Index faceIndex=0;
 	//Index vetexIndex=0;	
-	for (vector<Face>::iterator iter=m_Mesh_faces.begin();	iter!=m_Mesh_faces.end();)	{
+	for (vector<Face>::iterator iter = m_Mesh_faces.begin();
+															iter != m_Mesh_faces.end();)	{
 			//顶点邻接当前面;
 			(*iter).ResetMark();
 			m_Face_T2.push_back(faceIndex);
@@ -139,10 +138,8 @@ void Mesh::InitMesh(){
 }
 
 void Mesh::ProcessVetex(vector<Face>::iterator iter, Index faceIndex){
-	//  三个顶点 保存索引号 == 面片中的索引号;
-/*	Index* v123;*/
-	(*iter).Getv123(v123);
-	for (int i =0 ; i < 2; i++)	{
+		(*iter).Getv123(v123);
+	for (int i =0 ; i != 3; i++)	{
 		// 三个顶点 保存索引号 == 面片中的索引号;
 		m_Mesh_vetexs.at(v123[i]).SetIndex(v123[i]);
 		// 把当前面的索引号加入 三个顶点的邻接面表;
@@ -154,13 +151,14 @@ void Mesh::ProcessEdge(vector<Face>::iterator iter,Index faceIndex){
 	// 依次构造三条边 压入边表 加入索引;
 	//Index *v123,*v12,*e123;
 	(*iter).Getv123(v123);
-	for (int i= 0; i < 3; i++){
+	for (int i= 0; i != 3; i++){
 		v12[0]=v123[i];
-		v12[1]=v123[(i%2+1)];
+		v12[1]=v123[((i+1)%3)];
 		m_CurrentEdge.SetVexIndex(v12[0],v12[1]); // 内含序号升序;
-		Index edgeIndex = i;
+		Index edgeIndex = faceIndex + i;
 		m_CurrentEdge.SetIndex(edgeIndex);
 		m_CurrentEdge.ClearAdjFace();
+		m_CurrentEdge.AddadjFace(faceIndex);
 		m_Edge_T1.push_back(m_CurrentEdge);
 		e123[i] = edgeIndex;
 	}
@@ -169,46 +167,32 @@ void Mesh::ProcessEdge(vector<Face>::iterator iter,Index faceIndex){
 
 void Mesh::SimplyEdge(){
 	//去除重复的边 重新编号;
-	Index face1, face2,oldedgeIndex1,oldedgeIndex2;
+	Index face1, face2,oldEdge1,oldEdge2;
 	Index edgeIndex=0;
-	vector<Edge>::iterator iter = m_Edge_T1.begin();		
-	vector<Edge>::iterator iter2 = m_Edge_T1.begin();
-	++iter2;	
-	while(iter != m_Edge_T1.end()){
-		if (iter->IsMarked())  {
-			++iter;
-			iter2=iter;
-			continue;//跳过重复的;
-		}
-		++iter2;
-		while( iter2 != m_Edge_T1.end()){
-			if ( *iter2 == *iter ){	//重复边	;	
-				face2 = iter2->GetLastAdjFace();		
-				oldedgeIndex2 =iter2->GetIndex();//原边表数据 待改	;	
-				m_Mesh_faces.at(face2).SwapEdgeIndex(oldedgeIndex2,edgeIndex);//更新对应邻接面 的边表;
+	list<Edge>::iterator iter = m_Edge_T1.begin();		
+	list<Edge>::iterator iter2; 
+	for (list<Edge>::iterator iter= m_Edge_T1.begin();iter!= m_Edge_T1.end();){		
+		for (list<Edge>::iterator iter2 = iter ; iter2 != m_Edge_T1.end(); ++iter2){
+			if (*iter2 == *iter){
+				face2 = iter2->GetLastAdjFace();
+				oldEdge2 = iter2->GetIndex();
+				m_Mesh_faces.at(face2).SwapEdgeIndex(oldEdge2, edgeIndex);
 				iter->AddadjFace(face2);
-				iter2->GetMarked();
-				break;
-			}else{
-				++iter2;
+				m_Edge_T1.erase(iter2);			
 			}
-		}// iter2
-		face1 = iter->GetFirstAdjFace();  //adjface = empty
-		oldedgeIndex1=iter->GetIndex();
-		m_Mesh_faces.at(face1).SwapEdgeIndex(oldedgeIndex1,edgeIndex);
-		m_CurrentEdge.ClearAdjFace();
-		m_CurrentEdge=*iter;	
-
+		}
+		face1 = iter->GetLastAdjFace();
+		oldEdge1 = iter->GetIndex(); 
+		m_Mesh_faces.at(face1).SwapEdgeIndex(oldEdge1, edgeIndex);
 		if ((iter->GetAdjFaceSize()) > 2 ){
 			cout<<"Edge Num: "<<iter->GetIndex()<<endl;
 			throw	runtime_error("adjFace.size()>2!");
 		}	
-
-		m_CurrentEdge.SetIndex(edgeIndex++);
-		m_Mesh_edges.push_back(m_CurrentEdge);
-		++iter;
-		iter2=iter;		    
-	}//iter
+		m_CurrentEdge = *iter;
+		m_Mesh_edges.push_back(m_CurrentEdge);		
+		edgeIndex++;
+		iter++;
+	}	
 }
 void Mesh::ScanEdge(){
 	//扫描边表, 补充顶点的邻接边 和 边的邻接面;
@@ -241,7 +225,8 @@ void Mesh::ProcessFace(){
 	double more,Area,p2u,p2v,p3u,p3v;
 	//Index *v123;	
 	PlanePara p123[3];
-	for (vector<Face>::iterator iter=m_Mesh_faces.begin(); iter !=m_Mesh_faces.end();)	{
+	for (vector<Face>::iterator iter=m_Mesh_faces.begin(); 
+															iter !=m_Mesh_faces.end();)	{
 		iter->Getv123(v123); 		
 		a = m_Mesh_vetexs.at(v123[0]).GetPos();
 		b = m_Mesh_vetexs.at(v123[1]).GetPos();
@@ -297,8 +282,6 @@ void Mesh::MeshesOutput(string filename) {
 	fprintf_s(in,"MeshFile format: %s\n",m_Mesh_format);
 	//write 顶点
 	fprintf_s(in,"Vetex Number: %d \n",m_Mesh_vetexs.size());
-	//PlanePara vetex2d;
-	
 	for (int i=0; i!=m_Mesh_vetexs.size(); i++){
 		m_CurrentVex = m_Mesh_vetexs.at(i);
 		double xyz[3];
@@ -307,8 +290,7 @@ void Mesh::MeshesOutput(string filename) {
 	}
 	//write faces 
 	fprintf_s(in,"Faces Number: %d \n",m_Mesh_faces.size());
-	//TriAngle face2d;
-	for (int i=0; i!=m_Mesh_faces.size(); i++){
+  for (int i=0; i!=m_Mesh_faces.size(); i++){
 		m_CurrentTri = m_Mesh_faces.at(i);
 		Index v123[3];
 		m_CurrentTri.Gete123(v123);

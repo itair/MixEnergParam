@@ -24,9 +24,12 @@ public:
 		this->v1 = ( a < b ) ? a : b; 
 		this->v2 = ( a >= b )? a : b;		
 	}
-
+	
 	bool operator == (const Edge& edge){
 		return (v1==edge.v1 && v2==edge.v2);
+	}
+	bool IsEqual(const const Edge& edge1 , const Edge& edge2){
+		return (edge1.v1==edge2.v1 && edge1.v2==edge2.v2 );
 	}
 
 	void ClearAdjFace(void){	adjFace.clear();	}

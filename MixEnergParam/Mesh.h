@@ -19,12 +19,11 @@
 #include "BasicDS.h"
 #include "TriMesh.h"
 #include "PDerivative.h"
-//#include "Complex.cpp"
+
 using namespace std;
 
-
 class Mesh{
-	//变量
+//变量
 private:
 	vector<Face>	m_Mesh_faces;
 	vector<Vertex>	m_Mesh_vetexs;
@@ -34,7 +33,7 @@ private:
 	list<Index> m_Face_T2;	//未处理
 	list<Index> m_Face_T0;	//面栈
 
-	vector<Edge> m_Edge_T1;	//边池
+	list<Edge> m_Edge_T1;	//边池
 	list<Index> m_Edge_T2;	//边栈
 	list<Index> m_Edge_Border; //边界
 
