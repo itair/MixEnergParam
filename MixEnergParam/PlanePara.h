@@ -20,4 +20,6 @@ public:
 	const Index  GetIndex(){ return index;	}
 
 	void SetIndex ( const Index i) { index = i ;}
+	
+	void Clear(void) { index = 0, u=0.0 ;v=0.0 ;}
 };

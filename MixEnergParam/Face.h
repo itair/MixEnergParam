@@ -40,7 +40,7 @@ public:
 	void SetIndex(const Index i){		this->index = i;	}
 
 	const sVector GetNormal(void){  return normal; }
-	void SetNormal(const sVector norm){ normal = norm; }
+	void SetNormal(const sVector norm){ this->normal = norm; }
 
 	void  Getv123(Index v123[]){
 		v123[0] = v1;

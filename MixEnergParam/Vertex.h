@@ -18,7 +18,7 @@ private:
 	vector <Index> adjEgde;
 public:
 	void SetPos(const double  dx, const double dy,const double dz){
-		pos.SetsVector(dx, dz, dz);
+		pos.SetsVector(dx, dy, dz);
 	}
 	const sVector GetPos(){		return pos; }	
 	void GetXYZ (double xyz[]) { 	pos.GetXYZ(xyz);	}

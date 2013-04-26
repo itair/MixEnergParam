@@ -12,8 +12,7 @@ Mesh::Mesh(){
 	m_Mesh_vetexs.clear();
 	m_Edge_Border.clear();
 	m_Edge_T1.clear();	
-	m_epsilon = 0.5;
-	
+	m_epsilon = 0.5;	
 }
 
 Mesh::~Mesh(){
@@ -39,17 +38,15 @@ void Mesh::ReadMesh(string filename){
 	fscanf_s(in,"%d",&dV);
 	fscanf_s(in,"%d",&dF);
 	fscanf_s(in,"%d",&dE);
-	//cin>>ext>>dV>>dF>>dE;
 	strcpy_s(m_Mesh_format,ext);
 	cout<<"MeshFile Format: " <<ext<<endl;
-	//memoryallocate(dV,dF);
 	//read vertex
 	Vertex dvetex;
 	double dx=0.0;
 	double dy=0.0;
 	double dz=0.0;
 	for(i=0;i<dV;i++){
-		fscanf_s(in,"%lf %lf %lf",&dx,&dy,&dz);
+		fscanf_s(in,"%lf%lf%lf",&dx,&dy,&dz);
 		dvetex.SetPos(dx,dy,dz);
 		m_Mesh_vetexs.push_back(dvetex);
 	}
@@ -57,23 +54,20 @@ void Mesh::ReadMesh(string filename){
 	assert( temp == dV );
 	cout<<"Vetex Num: "<<dV<<endl;
 	//read faces
-	int val=3;
-	int di=0;
-	int dj=0;
-	int dk=0;
+	int val;
+	int di;
+	int dj;
+	int dk;
 	Face dface;
 	for(i=0;i<dF;i++){
-		fscanf_s(in,"%d %d %d %d",&val,&di,&dj,&dk);
+		fscanf_s(in,"%d%d%d%d",&val,&di,&dj,&dk);
 		dface.SetVextexIndex(di,dj,dk);
 		m_Mesh_faces.push_back(dface);
 	}
 	assert(m_Mesh_faces.size()==dF);
 	cout<<"Face Num: "<<dF<<endl;
 	//Read Edgs:
-	//cout<<endl<<"Edge Num: "<<dE;
-	fclose(in);
-	//cout<<"Mesh Read.\n";
-	//cout<<"------------------------------------------"<<endl;
+		fclose(in);
 }
 
 void Mesh::ResultOutput(string filename){
@@ -151,13 +145,15 @@ void Mesh::ProcessEdge(vector<Face>::iterator iter,Index faceIndex){
 	// 依次构造三条边 压入边表 加入索引;
 	//Index *v123,*v12,*e123;
 	(*iter).Getv123(v123);
+	Index edgeIndex=0;
 	for (int i= 0; i != 3; i++){
 		v12[0]=v123[i];
 		v12[1]=v123[((i+1)%3)];
 		m_CurrentEdge.SetVexIndex(v12[0],v12[1]); // 内含序号升序;
-		Index edgeIndex = faceIndex + i;
+		edgeIndex = 3*faceIndex + i;
 		m_CurrentEdge.SetIndex(edgeIndex);
 		m_CurrentEdge.ClearAdjFace();
+		m_CurrentEdge.ResetMark();
 		m_CurrentEdge.AddadjFace(faceIndex);
 		m_Edge_T1.push_back(m_CurrentEdge);
 		e123[i] = edgeIndex;
@@ -169,29 +165,35 @@ void Mesh::SimplyEdge(){
 	//去除重复的边 重新编号;
 	Index face1, face2,oldEdge1,oldEdge2;
 	Index edgeIndex=0;
-	list<Edge>::iterator iter = m_Edge_T1.begin();		
-	list<Edge>::iterator iter2; 
-	for (list<Edge>::iterator iter= m_Edge_T1.begin();iter!= m_Edge_T1.end();){		
-		for (list<Edge>::iterator iter2 = iter ; iter2 != m_Edge_T1.end(); ++iter2){
-			if (*iter2 == *iter){
+	list<Edge>::iterator iter = m_Edge_T1.begin();
+	list<Edge>::iterator iter2 = m_Edge_T1.begin();
+	while(iter != m_Edge_T1.end()){
+		if ( (*iter).IsMarked()	)		{
+			iter++;
+			continue;
+		}
+		iter2 = iter;
+		iter2++;
+		while (iter2 != m_Edge_T1.end()){
+			if ((*iter2).IsEqual(*iter)){
 				face2 = iter2->GetLastAdjFace();
 				oldEdge2 = iter2->GetIndex();
 				m_Mesh_faces.at(face2).SwapEdgeIndex(oldEdge2, edgeIndex);
 				iter->AddadjFace(face2);
-				m_Edge_T1.erase(iter2);			
+				(*iter2).GetMarked();
+				break;
+			}else{
+			iter2++;
 			}
 		}
-		face1 = iter->GetLastAdjFace();
-		oldEdge1 = iter->GetIndex(); 
-		m_Mesh_faces.at(face1).SwapEdgeIndex(oldEdge1, edgeIndex);
-		if ((iter->GetAdjFaceSize()) > 2 ){
-			cout<<"Edge Num: "<<iter->GetIndex()<<endl;
-			throw	runtime_error("adjFace.size()>2!");
-		}	
-		m_CurrentEdge = *iter;
-		m_Mesh_edges.push_back(m_CurrentEdge);		
-		edgeIndex++;
-		iter++;
+	face1 = iter->GetLastAdjFace();
+	oldEdge1 = iter->GetIndex(); 
+	m_Mesh_faces.at(face1).SwapEdgeIndex(oldEdge1, edgeIndex);
+	m_CurrentEdge=(*iter);
+	m_CurrentEdge.SetIndex(edgeIndex);
+	m_Mesh_edges.push_back(m_CurrentEdge);
+	edgeIndex++;
+	iter++;
 	}	
 }
 void Mesh::ScanEdge(){
@@ -214,10 +216,9 @@ void Mesh::ScanEdge(){
  sVector Mesh::NormalCross( const sVector &v1, const sVector &v2){   //规范化叉积		
 	sVector norm;
 	double more; 	
-	norm. Cross( v1 , v2 );
-	more = norm.More();
-	norm = norm / more;
-	return  norm;	
+	norm= norm.Cross( v1 , v2 );//无返回值!!!
+	more = norm.More();	
+	return  norm/ more;	
 }
 void Mesh::ProcessFace(){
 	//计算 面表中 每个三角形的 法向量 和 局部正交基 平面坐标 填表; 还有面积.
@@ -234,16 +235,14 @@ void Mesh::ProcessFace(){
  		//求一组正交基		
 		A =  b - a ;
 		B =  c - a ;
-		N = NormalCross( A , B);
-		(*iter).SetNormal( N );
-		X = NormalCross( N, B ); //u方向		
-		XB.Cross( X, B );
-		more = XB.More();
-		Y = XB / more;   //v方向
+		N = NormalCross( A, B); // 法向量问题
+		iter->SetNormal( N );
+		X = NormalCross( N, B); //u方向		
+		Y = NormalCross( X, B); //v方向
 		p2u = A*X;
 		p2v = A*Y;
-		p3u = B*X ;
-		p3v =  B*Y;
+		p3u = B*X;
+		p3v = B*Y;
 
 		m_CurrentPlane.Setuv(0.0 , 0.0);
 		p123[0]=m_CurrentPlane;
@@ -251,12 +250,11 @@ void Mesh::ProcessFace(){
 		p123[1]=m_CurrentPlane;
 		m_CurrentPlane.Setuv( p3u , p3v);
 		p123[2]=m_CurrentPlane;
-		iter->Getp123(p123);
+		iter->Setp123(p123);
 
 		 Area = 0.5 * ( (p2u * p3v) - (p2v * p3u));
 		 (*iter).SetArea (fabs(Area));
-		//assert(  (*iter).Area<=0 );
-		++iter;
+			++iter;
 	}
 }
 
@@ -293,8 +291,24 @@ void Mesh::MeshesOutput(string filename) {
   for (int i=0; i!=m_Mesh_faces.size(); i++){
 		m_CurrentTri = m_Mesh_faces.at(i);
 		Index v123[3];
-		m_CurrentTri.Gete123(v123);
-		fprintf_s(in, "%ld\t%ld\t%ld\n", v123[0],v123[1],v123[2]);
+		m_CurrentTri.Getv123(v123);
+		Index e123[3];
+		m_CurrentTri.Gete123(e123);
+		PlanePara p123[3];
+		m_CurrentTri.Getp123(p123);
+		sVector norm = m_CurrentTri.GetNormal();
+		double xyz[3] ;
+		norm.GetXYZ(xyz);
+		double Area = m_CurrentTri.GetArea();
+		fprintf_s(in, "%lu\t%lu\t%lu\t", v123[0],v123[1],v123[2]);
+		fprintf_s(in, "%lf\t%lf\t%lf\n", xyz[0],xyz[1],xyz[2]);
+		fprintf_s(in, "%lu\t%lu\t%lu\n", e123[0],e123[1],e123[2]);
+		fprintf_s(in , "%lf\n", Area);
+		for (int i=0; i<3 ; i++){
+			double uv[2];
+			p123[i].Getuv(uv);
+			fprintf_s(in, "%lf\t%lf\n", uv[0],uv[1]);
+		}
 	}
 	//write edges
 	fprintf_s(in,"Edges Number: %d \n",m_Mesh_edges.size());
@@ -356,10 +370,11 @@ void Mesh::Flatten1stTir(){
 	m_CurrentTri.Getv123(v123);
 	m_CurrentTri.Getp123(p123);	
  	m_PlaneNormal = m_CurrentTri.GetNormal(); //嵌入平面的统一法向量
-	for (int i = 0; i< 2 ; i++)	{
+	for (int i = 0; i< 3 ; i++)	{
 		index_vertex = v123[i];
 		m_CurrentPos = m_Mesh_vetexs.at(index_vertex).GetPos();
-		if (i=0) { m_PlaneOrigin = m_CurrentPos; }    //2D原点
+		if (i == 0) { m_PlaneOrigin = m_CurrentPos; }    //2D原点
+		m_CurrentPlane.Clear();
 		m_CurrentPlane = p123[i];
 		m_CurrentPlane.SetIndex( index_vertex );
 		m_Plane_Vertex.push_back(m_CurrentPlane);	

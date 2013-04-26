@@ -57,9 +57,9 @@ public:
 
 	const sVector Cross(const sVector &ab, const sVector &bc){
 		sVector norm;		
-		norm.x = (ab.y * bc.z) - (ab.z * bc.y);
-		norm.y = -((ab.x * bc.z) - (ab.z * bc.x));
-		norm.z = (ab.x * bc.y) - (ab.y * bc.x);
+		norm.x = (ab.y) * (bc.z) - (ab.z) * (bc.y);
+		norm.y = -((ab.x) * bc.z) - (ab.z) * (bc.x);
+		norm.z = (ab.x) * (bc.y) - (ab.y) * (bc.x);
 		return norm;
 	}	
 	const double More( void){		return sqrt(x*x + y*y + z*z);	}

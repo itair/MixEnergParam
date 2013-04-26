@@ -20,24 +20,17 @@ int _tmain(int argc, _TCHAR* argv[])
 	cout<<"------------------------------------------"<<endl;
 	mesh.ReadMesh(filename);
 	cout<<"网格读取完毕"<<endl;
-		cout<<"------------------------------------------"<<endl;
-	// TODO:
-	//加入网格算法 
+	cout<<"------------------------------------------"<<endl;
 	mesh.InitMesh();
 	cout<<"网格初始化完毕-"<<endl;
-		cout<<"------------------------------------------"<<endl;
+	cout<<"------------------------------------------"<<endl;
 	cout<<"开始参数化过程-"<<endl;
 	mesh.RunFlatPara();
-
-	//Mesh.RunFlatPara();
-
 	cout<<"网格计算完毕"<<endl;
 	cout<<"------------------------------------------"<<endl;
 	mesh.MeshesOutput(filename);
 	mesh.ResultOutput(filename);
-
 	system("pause");
-	//getchar();
 	return 0;
 }
 
