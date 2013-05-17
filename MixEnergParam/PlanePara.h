@@ -13,7 +13,7 @@ private:
 	double u;
 	double v;
 public:
-	void Getuv(double uv[]){		uv[0]=this->u;	uv[1]=this->v;	}
+	void Getuv(double uv[]){	uv[0]=this->u;	uv[1]=this->v;	}
 
 	void Setuv(const double uu, const double vv){ u = uu; v = vv; }
 

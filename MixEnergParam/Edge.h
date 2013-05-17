@@ -28,18 +28,19 @@ public:
 // 	bool operator == (const Edge& edge){
 // 		return (v1==edge.v1 && v2==edge.v2);
 // 	}
-	bool IsEqual(const const Edge& edge ){
+	bool IsEqual(const Edge& edge ){
 		return (v1==edge.v1 && v2==edge.v2 );
 	}
 
 	void ClearAdjFace(void){	adjFace.clear();	}
+	const vector <Index> GetAdjFaces(void) { return adjFace;}
 	const Index GetFirstAdjFace(void){	return adjFace.front();	}
 	const Index GetLastAdjFace(void){	return adjFace.back();	}
 	const Index GetAdjFaceSize(void){	return adjFace.size();	}
 	void AddadjFace(const Index faceIndex){	this->adjFace.push_back(faceIndex);	}
 	void DeladjFace(void){	this->adjFace.pop_back();	}
 	bool IsAdjFaceEmpty(void){		return adjFace.empty();	}
-
+	
 	void  Getv12(Index v12[]){		v12[0] = v1;		v12[1] = v2;			}
 	 void Setv12(Index v12[]){		v1 = v12[0] ;		v2 = v12[1] ;		}
 

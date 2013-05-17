@@ -96,14 +96,14 @@ void Mesh::ResultOutput(string filename){
 	double uv[2];
 	for (int i=0; i!=m_Plane_Vertex.size(); i++){
 				m_Plane_Vertex.at(i).Getuv(uv);
-			fprintf_s(in, "%lf\t%lf\n",uv);
+			fprintf_s(in, "%lf\t%lf\n",uv[0],uv[1]);
 	}
 	//write faces 
 	fprintf_s(in,"Faces Number: %d \n",m_Mesh_faces.size());
 	Index v123[3];
 	for (int i=0; i!=m_Mesh_faces.size(); i++){
 		m_Mesh_faces.at(i).Getv123(v123)	;
-		fprintf_s(in,"%d\t%d\t%d\n", v123);
+		fprintf_s(in,"%d\t%d\t%d\n", v123[0], v123[1], v123[2]);
 	}	
 	fclose(in);
 	cout<<"Mesh Saved.\n";
@@ -135,20 +135,23 @@ void Mesh::ProcessVetex(vector<Face>::iterator iter, Index faceIndex){
 		(*iter).Getv123(v123);
 	for (int i =0 ; i != 3; i++)	{
 		// 三个顶点 保存索引号 == 面片中的索引号;
-		m_Mesh_vetexs.at(v123[i]).SetIndex(v123[i]);
+		m_Mesh_vetexs.at(v123[i]).SetIndex(faceIndex*3+i);
 		// 把当前面的索引号加入 三个顶点的邻接面表;
 		m_Mesh_vetexs.at(v123[i]).AddadjFace(faceIndex);
+		m_Mesh_vetexs.at(v123[i]).ResetMark();
 	}
 }
 
 void Mesh::ProcessEdge(vector<Face>::iterator iter,Index faceIndex){
 	// 依次构造三条边 压入边表 加入索引;
 	//Index *v123,*v12,*e123;
+	Index e123[3];
 	(*iter).Getv123(v123);
 	Index edgeIndex=0;
 	for (int i= 0; i != 3; i++){
 		v12[0]=v123[i];
 		v12[1]=v123[((i+1)%3)];
+	
 		m_CurrentEdge.SetVexIndex(v12[0],v12[1]); // 内含序号升序;
 		edgeIndex = 3*faceIndex + i;
 		m_CurrentEdge.SetIndex(edgeIndex);
@@ -186,7 +189,7 @@ void Mesh::SimplyEdge(){
 			iter2++;
 			}
 		}
-	face1 = iter->GetLastAdjFace();
+	face1 = iter->GetFirstAdjFace();
 	oldEdge1 = iter->GetIndex(); 
 	m_Mesh_faces.at(face1).SwapEdgeIndex(oldEdge1, edgeIndex);
 	m_CurrentEdge=(*iter);
@@ -222,8 +225,8 @@ void Mesh::ScanEdge(){
 }
 void Mesh::ProcessFace(){
 	//计算 面表中 每个三角形的 法向量 和 局部正交基 平面坐标 填表; 还有面积.
-	sVector a,b,c,A,B,X,Y,N,XB;
-	double more,Area,p2u,p2v,p3u,p3v;
+	sVector a,b,c,A,B,X,Y,N;
+	double Area,p2u,p2v,p3u,p3v;
 	//Index *v123;	
 	PlanePara p123[3];
 	for (vector<Face>::iterator iter=m_Mesh_faces.begin(); 
@@ -279,6 +282,7 @@ void Mesh::MeshesOutput(string filename) {
 	fprintf_s(in,"Source file : %s\n",sourcefile);
 	fprintf_s(in,"MeshFile format: %s\n",m_Mesh_format);
 	//write 顶点
+	
 	fprintf_s(in,"Vetex Number: %d \n",m_Mesh_vetexs.size());
 	for (int i=0; i!=m_Mesh_vetexs.size(); i++){
 		m_CurrentVex = m_Mesh_vetexs.at(i);
@@ -286,6 +290,8 @@ void Mesh::MeshesOutput(string filename) {
 		m_CurrentVex.GetXYZ(xyz);
 		fprintf_s(in, "%lf\t%lf\t%lf\n", xyz[0], xyz[1], xyz[2] );
 	}
+
+	
 	//write faces 
 	fprintf_s(in,"Faces Number: %d \n",m_Mesh_faces.size());
   for (int i=0; i!=m_Mesh_faces.size(); i++){
@@ -318,6 +324,7 @@ void Mesh::MeshesOutput(string filename) {
 		m_CurrentEdge.Getv12(v12);
 		fprintf_s(in, "%ld\t%ld\n",v12[0],v12[1]);
 	}
+	
 	fclose(in);
 	cout<<"Mesh Saved.\n";
 	cout<<"------------------------------------------"<<endl;
@@ -340,9 +347,12 @@ bool Mesh::RunFlatPara(){
 			return false;
 		  }	
 		FreeVertexProjection();   //计算自由点 在 初始平面的上的投影 并转换为平面坐标 uv 存入 m_Plane_T0 
-		ComputeCurrEnergy()  ;   // 计算 T0 能量表示;
+		//ComputeCurrEnergy()  ;   // 计算 T0 能量表示;
 //TODO 最小化问题 求出 m_Vertex_Free 对应 2D坐标 加入 m_Plane_Vertex
-//		SloveMinEnery();		
+//		SloveMinEnery();	
+
+		m_Plane_Vertex.insert(m_Plane_Vertex.end(),m_Plane_T0.begin(),m_Plane_T0.end());
+
 		for (list<Index>::iterator iter = m_Face_T0.begin();
 				iter != m_Face_T0.end();	iter ++){  //更新 T1 T2;
 			m_Face_T2.remove(*iter);
@@ -353,11 +363,46 @@ bool Mesh::RunFlatPara(){
 }
 void Mesh::GetFirstTri(){
 	//放置第一个三角形
-	Index firstface=m_Mesh_faces.size()/2;
+	Index firstpoint,firstface;
+	double xyz[3];
+	double temp,temp2;
+	m_Mesh_vetexs.at(0).GetXYZ(xyz);
+	temp=fabs(xyz[0])+fabs(xyz[1])+fabs(xyz[2]);
+	firstpoint=0;
+	for (vector<Vertex>::iterator iter = m_Mesh_vetexs.begin();
+		iter != m_Mesh_vetexs.end();	iter ++){
+		(*iter).GetXYZ(xyz);
+		temp2=fabs(xyz[0])+fabs(xyz[1])+fabs(xyz[2]);
+		if (temp>temp2) {	
+			temp=temp2;
+			firstpoint=iter->GetIndex();
+			firstface=iter->GetFirstAdjFace();
+		}
+		
+ 	}
+ 	cout<<"firstpoint= "<<firstpoint<<endl;
+// 	Index v123[3];
+// 	firstface=0;
+// 	for (vector<Face>::iterator iter = m_Mesh_faces.begin();
+// 		iter != m_Mesh_faces.end();	iter ++){
+// 			iter->Getv123(v123);
+// 			if (v123[0]==firstpoint || v123[1]==firstpoint || v123[2]==firstpoint){
+// 				break;
+// 			}
+// 			firstface++;
+// 	}
+	if (firstface >=m_Mesh_faces.size() ){
+		cout<<"无法找到firstface = "<<firstface<<endl;
+	}else{
+		cout<<"firstface= "<<firstface<<endl;
+	}
+
+
+	//firstface=m_Mesh_faces.size()/2;
 	m_Face_T0.push_back(firstface);
 	m_Face_T1.push_back(firstface);
 	m_Face_T2.remove(firstface);
-	m_Mesh_faces.at(firstface).IsMarked();
+	m_Mesh_faces.at(firstface).GetMarked();
 }
 
 void Mesh::Flatten1stTir(){
@@ -367,6 +412,17 @@ void Mesh::Flatten1stTir(){
 	PlanePara p123[3];
 	index_face=m_Face_T0.back();
 	m_CurrentTri = m_Mesh_faces.at(index_face);
+	m_CurrentTri.Getv123(v123); 		
+	sVector a = m_Mesh_vetexs.at(v123[0]).GetPos();
+	sVector b = m_Mesh_vetexs.at(v123[1]).GetPos();
+	sVector c = m_Mesh_vetexs.at(v123[2]).GetPos();
+	//求一组正交基		
+	sVector A =  b - a ;
+	sVector B =  c - a ;
+	sVector N = NormalCross( A, B); // 法向量问题
+	m_PlaneU = NormalCross( N, B); //u方向		
+	m_PlaneV = NormalCross( m_PlaneU, B); //v方向
+
 	m_CurrentTri.Getv123(v123);
 	m_CurrentTri.Getp123(p123);	
  	m_PlaneNormal = m_CurrentTri.GetNormal(); //嵌入平面的统一法向量
@@ -382,59 +438,58 @@ void Mesh::Flatten1stTir(){
 }
 
 bool Mesh::GetNextVetex(){
-	//T0中所有边中 邻面未mark的边 对应的顶点集 m_Vertex_Border;
-	//m_Vertex_Borderi中全部邻面未mark的 为新T0;
-	//新T0中 不在m_Vertex_Border中的顶点为自由顶点;
-	Index index_face;
+	
+	Index index_face,index_edge;
 	Index e123[3];
+	Index v123[3];
+	vector<Index> adjface_index;
+	bool marked;
+	//t0 所有未被mark的点 为边界点,mark它们; 边界点所有邻接面中未被mark的为新T0
+	//新T0 中所有未被mark的点为 自由点,mark新t0
 	for (list<Index>::iterator iter = m_Face_T0.begin();
-				iter != m_Face_T0.end();	iter ++){
-		m_CurrentTri = m_Mesh_faces.at(*iter); 
-		m_CurrentTri.Gete123(e123);
-		for (int i=0; i<2; i++) {
-			m_Edge_Border.push_back(e123[i]);
-		}
-	}
-
-	m_Edge_Border.sort();
-	m_Edge_Border.unique();
-	m_Vertex_Border.clear();// 
-
-	for (list<Index>::iterator iter = m_Edge_Border.begin();
-				iter != m_Edge_Border.end();	iter ++){
-		m_CurrentEdge = m_Mesh_edges.at(*iter);
-		while (!(m_CurrentEdge.IsAdjFaceEmpty())) {
-			index_face = m_CurrentEdge.GetLastAdjFace();
-			m_CurrentEdge.DeladjFace();
-			if (!(m_Mesh_faces.at(index_face).IsMarked())){
-				Index v12[2];
-				m_CurrentEdge.Getv12(v12);
-				m_Vertex_Border.push_back(v12[0]);
-				m_Vertex_Border.push_back(v12[1]);
+		iter != m_Face_T0.end();	iter ++){
+			index_face = *iter;
+			m_Mesh_faces.at(index_face).Getv123(v123);
+			for (int i=0; i!=3; i++){
+				m_CurrentVex = m_Mesh_vetexs.at(v123[i]);
+				if ( !m_CurrentVex.IsMarked()){
+					m_Mesh_vetexs.at(v123[i]).GetMarked();
+					m_Vertex_T1.push_back(v123[i]);					
+					}
+				}
+			}	
+	if (m_Vertex_T1.empty()){return false;}
+	m_Vertex_T1.sort();
+	m_Vertex_T1.unique();
+	m_Face_T0.clear();
+	for (list<Index>::iterator iter = m_Vertex_T1.begin();
+		iter != m_Vertex_T1.end();	iter ++){
+		adjface_index = m_Mesh_vetexs.at(*iter).GetadjFace();
+		for (vector<Index>::iterator iter2 = adjface_index.begin();
+			iter2 != adjface_index.end(); iter2 ++){
+				index_face = *iter2;
+				m_CurrentTri = m_Mesh_faces.at(index_face);
+				if ( !m_CurrentTri.IsMarked())		{//新T0
+					m_Face_T0.push_back(index_face);
+					m_Mesh_faces.at(index_face).GetMarked();
+				}
 			}
 		}
-	}
-	m_Vertex_Border.sort();
-	m_Vertex_Border.unique();
-	m_Face_T0.clear();
-	m_Vertex_Free.clear();//清栈
-	for (list<Index>::iterator iter = m_Vertex_Border.begin();
-				iter != m_Vertex_Border.end();	iter ++)	{
-		m_CurrentVex = m_Mesh_vetexs.at(*iter);
-		while (!(m_CurrentVex.IsAdjFaceEmpty()) ){
-			index_face = m_CurrentVex.GetLastAdjFace();;
-			m_CurrentVex.DeladjFace();
-			if (!(m_Mesh_faces.at(index_face).IsMarked())){
-				m_Mesh_faces.at(index_face).GetMarked();
-				m_Face_T0.push_back(index_face);//新T0找到
-				Index v123[3];
-				m_Mesh_faces.at(index_face).Getv123(v123);
-				for (int i=0; i <2 ; i++){
-					m_Vertex_Free.push_back(v123[i]);
-				}				
-			}//if
-		}		
-	}//for
+	m_Face_T0.sort();
+	m_Face_T0.unique();
+	m_Vertex_Free.clear();
+	for (list<Index>::iterator iter = m_Face_T0.begin();
+		iter != m_Face_T0.end();	iter ++){
+			index_face = *iter;
+			m_Mesh_faces.at(index_face).Getv123(v123);
+			for (int i=0; i!=3; i++){
+				m_CurrentVex = m_Mesh_vetexs.at(v123[i]);
+				if ( !m_CurrentVex.IsMarked()){
+					//m_Mesh_vetexs.at(v123[i]).GetMarked();
+					m_Vertex_Free.push_back(v123[i]);					
+				}
+			}
+	}	
 	m_Vertex_Free.sort();
 	m_Vertex_Free.unique();
 	return !m_Face_T0.empty();
@@ -536,10 +591,82 @@ PDerivative Mesh::PartialDerivative(Face OldTri, Face NewTri){
 	return pl;
 }
 
+
+
+// 检查初始化网格数据
+bool Mesh::CheckMesh(void)
+{
+	Index vetNum = m_Mesh_vetexs.size();
+	Index faceNum = m_Mesh_faces.size();
+	Index edgeNum = m_Mesh_edges.size();
+
+	Index index_check;
+	Index e123[3];
+	Index v123[3];
+	//PlanePara p123[3];
+	double area_check;
+	const char* errLoc; 
+	vector<Index> adjFace_check;
+	
+		for (vector<Face>::iterator iter = m_Mesh_faces.begin();
+				iter != m_Mesh_faces.end(); iter++ ){
+		try{ //面检测
+					index_check=(*iter).GetIndex();
+			if (index_check >faceNum) { throw "面片序号index 溢出"; }
+			(*iter).Getv123(v123);
+			if (v123[0]>vetNum ||v123[1]>vetNum ||v123[2]>vetNum ){
+				throw "顶点编号v123 溢出";
+			}
+			(*iter).Gete123(e123);
+			if (e123[0]>edgeNum ||e123[1]>edgeNum ||e123[2]>edgeNum ){
+				throw "顶点编号e123 溢出";
+			}
+			area_check=(*iter).GetArea();
+			if (area_check <= 0) {
+				throw "面积数据错误";
+				}
+			adjFace_check=(*iter).GetAdjFaces();
+			for (vector<Index>::iterator iter2=adjFace_check.begin();
+				iter2 !=adjFace_check.end(); iter2++ ){
+					if ((*iter2)>faceNum)	{
+						throw "面表邻接面序号溢出";
+					}
+				}
+			}//try
+	catch(const char* errLoc ){
+			cout<<"m_Mesh_faces 数据错误"<<endl;
+			cout<<errLoc<<endl;
+			abort();	
+			}
+		}	 
+	Index v12[2];	
+		for (vector<Edge>::iterator iter = m_Mesh_edges.begin();
+			iter != m_Mesh_edges.end(); iter ++){
+				try{//边表检查
+					index_check=(*iter).GetIndex();
+					if (index_check >edgeNum) { throw "边表序号index 溢出"; }
+					(*iter).Getv12(v12);
+					if (v12[0]>vetNum || v12[1] >vetNum){throw "边表顶点序号溢出";}
+					adjFace_check = (*iter).GetAdjFaces();
+					for (vector<Index>::iterator iter2=adjFace_check.begin();
+						iter2 !=adjFace_check.end(); iter2++ ){
+							if ((*iter2)>faceNum)	{
+								throw "边表邻接面序号溢出";
+							}
+					}
+				}
+				catch (const char* errLoc){
+					cout<<"m_Mesh_edges 数据错误"<<endl;
+						cout<<errLoc<<endl;
+						abort();	
+				}
+		}
+	return true;
+}
 void Mesh::SloveMinEnery(){
 	//梯度下降法 解最小化问题;
 	//输入: 初始能量 E , 目标函数 E(Tx), 迭代步长 a , 收敛精度 e ;
 	//当然还得知道 梯度表达式 ;如果 梯度过小导致迭代步数太对 可以使用截断梯度计算或者随机梯度计算
-
+	//输入 m_Face_T0 ; m_Vertex_Free;
 
 }

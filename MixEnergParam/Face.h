@@ -72,17 +72,19 @@ public:
 		p2 = p123[1] ;
 		p3 = p123[2] ;
 	}
+	public:
 	void SetArea(const double TriAera) { Area = TriAera; }
-	const double GetArea(void){ return Area;}
+	double GetArea(void){ return Area;}
 
-	void ResetMark(void){ 		this->mark = false;	}
+	void ResetMark(void){ 	this->mark = false;	}
 	bool IsMarked(void){		return mark;	}
-	void GetMarked(void){    this->mark = true; }
+	void GetMarked(void){  this->mark = true; }
 	void ClearAdjFace(void){	adjFace.clear();	}
 
 	const Index GetFirstAdjFace(void){	return adjFace.front();	}
 	const Index GetLastAdjFace(void){	return adjFace.back();	}
-	const Index GetAdjFaceSize(void){	return adjFace.size();	}		
+	const Index GetAdjFaceSize(void){	return adjFace.size();	}
+	const vector <Index> GetAdjFaces(void) { return adjFace;}
 	void AddadjFace(const Index faceIndex){	this->adjFace.push_back(faceIndex);	}
 
 };

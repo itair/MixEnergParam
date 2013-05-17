@@ -102,4 +102,6 @@ public:
 
 
 	
+	// 检查初始化网格数据
+	bool CheckMesh(void);
 };

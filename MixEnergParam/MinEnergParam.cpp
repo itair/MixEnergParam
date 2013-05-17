@@ -22,11 +22,18 @@ int _tmain(int argc, _TCHAR* argv[])
 	cout<<"网格读取完毕"<<endl;
 	cout<<"------------------------------------------"<<endl;
 	mesh.InitMesh();
+	if(mesh.CheckMesh())
 	cout<<"网格初始化完毕-"<<endl;
 	cout<<"------------------------------------------"<<endl;
 	cout<<"开始参数化过程-"<<endl;
-	mesh.RunFlatPara();
-	cout<<"网格计算完毕"<<endl;
+	if(mesh.RunFlatPara()){	
+		cout<<"网格计算完毕"<<endl;
+	}
+	else{
+		cout<<"计算中止"<<endl;
+		system("pause");
+		return 0;
+	}
 	cout<<"------------------------------------------"<<endl;
 	mesh.MeshesOutput(filename);
 	mesh.ResultOutput(filename);
